@@ -56,26 +56,14 @@ const addBookHandler = (request, h) => {
   // Insert Data
   books.push(newBook);
 
-  // Regenreate ID in id book
-  const isSuccess = books.filter((book) => book.id === id).length > 0;
-
-  if (isSuccess) {
-    const response = h.response({
-      status: 'success',
-      message: 'Catatan berhasil ditambahkan',
-      data: {
-        bookId: id,
-      },
-    });
-    response.code(201);
-    return response;
-  }
-
   const response = h.response({
-    status: 'fail',
-    message: 'Buku gagal ditambahkan',
+    status: 'success',
+    message: 'Buku berhasil ditambahkan',
+    data: {
+      bookId: id,
+    },
   });
-  response.code(500);
+  response.code(201);
   return response;
 };
 
@@ -83,46 +71,29 @@ const getAllBooksHandler = (request, h) => {
   // Body Request Quary
   const { name, reading, finished } = request.query;
 
-  // Get All Data no use Quary
-  if (books.length === 0) {
-    const response = h.response({
-      status: 'success',
-      data: {
-        books: [],
-      },
-    });
-    response.code(200);
-    return response;
-  }
-
-  // Data Books
-  let filterBooks = books;
-
   // Filtering
-  if (typeof name !== 'undefined') {
-    filterBooks = books.filter((book) => book.name.toLowerCase().includes(name.toLowerCase()));
+  let filteredBooks = books;
+
+  if (name) {
+    filteredBooks = filteredBooks.filter((book) => book.name.toLowerCase().includes(name.toLowerCase()));
   }
 
-  if (typeof reading !== 'undefined') {
-    filterBooks = books.filter((book) => Number(book.reading) === Number(reading));
+  if (reading !== undefined) {
+    filteredBooks = filteredBooks.filter((book) => book.reading === (reading === '1'));
   }
 
-  if (typeof finished !== 'undefined') {
-    filterBooks = books.filter((book) => Number(book.finished) === Number(finished));
+  if (finished !== undefined) {
+    filteredBooks = filteredBooks.filter((book) => book.finished === (finished === '1'));
   }
 
-  // Create Array new with quary
-  const listBook = filterBooks.map((book) => ({
-    id: book.id,
-    name: book.name,
-    publisher: book.publisher,
-  }));
-
-  // Respone with quary
   const response = h.response({
     status: 'success',
     data: {
-      books: listBook,
+      books: filteredBooks.map((book) => ({
+        id: book.id,
+        name: book.name,
+        publisher: book.publisher,
+      })),
     },
   });
 
@@ -133,10 +104,9 @@ const getAllBooksHandler = (request, h) => {
 const getBookByIdHandler = (request, h) => {
   const { bookId } = request.params;
 
-  const book = books.find((n) => n.id === bookId)[0];
+  const book = books.find((book) => book.id === bookId);
 
-  // Jika buku dengan ID yang diberikan tidak ditemukan
-  if (book !== undefined) {
+  if (book) {
     return {
       status: 'success',
       data: {
@@ -145,7 +115,6 @@ const getBookByIdHandler = (request, h) => {
     };
   }
 
-  // Jika buku ditemukan, kembalikan respons dengan data buku
   const response = h.response({
     status: 'fail',
     message: 'Buku tidak ditemukan',
@@ -156,8 +125,6 @@ const getBookByIdHandler = (request, h) => {
 
 const updateBookByIdHandler = (request, h) => {
   const { bookId } = request.params;
-
-  // Body Data request
   const {
     name,
     year,
@@ -169,7 +136,6 @@ const updateBookByIdHandler = (request, h) => {
     reading,
   } = request.payload;
 
-  // Memastikan properti 'name' terdapat dalam request body
   if (!name) {
     return h.response({
       status: 'fail',
@@ -177,7 +143,6 @@ const updateBookByIdHandler = (request, h) => {
     }).code(400);
   }
 
-  // Memastikan nilai properti 'readPage' tidak lebih besar dari nilai properti 'pageCount'
   if (readPage > pageCount) {
     return h.response({
       status: 'fail',
@@ -220,7 +185,6 @@ const updateBookByIdHandler = (request, h) => {
 
 const deleteBookByIdHandler = (request, h) => {
   const { bookId } = request.params;
-
   const index = books.findIndex((book) => book.id === bookId);
 
   if (index !== -1) {
